@@ -74,14 +74,14 @@ export function LogIn() {
               </div>
               <Input id="password" type="password" onChange={(e) => setPassword(e.target.value)} required />
             </div>
+             <Button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black">
+               Login
+             </Button>
           </div>
         </form>
       </CardContent>
       <CardFooter className="flex-col gap-2">
         {error && <p className="text-sm text-red-500">{error}</p>}
-        <Button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black">
-          Login
-        </Button>
         <Button variant="outline" onClick={handleGoogleLogin} className="w-full bg-black text-white dark:bg-white dark:text-black">
           Login with Google
         </Button>
