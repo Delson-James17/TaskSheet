@@ -58,7 +58,7 @@ task-sheet/
 ```bash
 git clone https://github.com/your-username/tasksheet.git
 cd tasksheet
-### 2. Install dependencies
+2. Install dependencies
 bash
 Copy
 Edit
