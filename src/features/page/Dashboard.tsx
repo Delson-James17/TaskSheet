@@ -16,8 +16,8 @@ type Task = {
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([])
-  const [user, setUser] = useState({ name: '', email: '', avatar: '' }) // ✅ Add this
-  const [role, setRole] = useState('user') // ✅ Add this
+  const [user, setUser] = useState({ name: '', email: '', avatar: '' }) 
+  const [role, setRole] = useState('user') 
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -28,7 +28,6 @@ export default function Dashboard() {
       const userId = session.session.user.id
       const { user: authUser } = session.session
 
-      // ✅ Set user
       setUser({
         name: authUser.user_metadata?.name ?? 'Unknown',
         email: authUser.email ?? '',
