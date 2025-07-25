@@ -25,10 +25,13 @@ export function LogIn() {
   const handleGoogleLogin = async () => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
+    options: {
+      redirectTo: 'https://task-sheet-j04ry0wyh-tubieradelsonjames-4335s-projects.vercel.app/dashboard'
+    }
   })
   if (error) console.error('Google login error:', error.message)
-     else navigate ('/dashboard') 
 }
+
   const handleLogIn = async (e: React.FormEvent) =>{
     e.preventDefault();
     const {error} = await supabase.auth.signInWithPassword({email,password})
