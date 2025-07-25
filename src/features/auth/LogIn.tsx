@@ -27,6 +27,7 @@ export function LogIn() {
     provider: 'google',
   })
   if (error) console.error('Google login error:', error.message)
+     else navigate ('/dashboard') 
 }
   const handleLogIn = async (e: React.FormEvent) =>{
     e.preventDefault();
@@ -74,6 +75,7 @@ export function LogIn() {
               </div>
               <Input id="password" type="password" onChange={(e) => setPassword(e.target.value)} required />
             </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
              <Button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black">
                Login
              </Button>
@@ -81,7 +83,6 @@ export function LogIn() {
         </form>
       </CardContent>
       <CardFooter className="flex-col gap-2">
-        {error && <p className="text-sm text-red-500">{error}</p>}
         <Button variant="outline" onClick={handleGoogleLogin} className="w-full bg-black text-white dark:bg-white dark:text-black">
           Login with Google
         </Button>
