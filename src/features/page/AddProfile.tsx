@@ -53,7 +53,7 @@ export default function AddProfile() {
         age: age === '' ? null : age,
         address: address || null,
         phone_number: phone || null,
-        role_id: roleData.id, // ✅ insert the role_id here
+        role_id: '106dcdf0-5560-499a-b55a-076ccf96f165'
       }
     ])
 
