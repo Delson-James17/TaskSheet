@@ -52,6 +52,25 @@ export const getSidebarData = (
         ]
       : []
 
+  const navGroups = [
+    {
+      title: 'General',
+      items: [...commonNav],
+    },
+    ...(onboardingNav.length > 0
+      ? [
+          {
+            title: 'Onboarding',
+            items: onboardingNav,
+          },
+        ]
+      : []),
+    {
+      title: role === 'admin' ? 'Admin' : 'User',
+      items: role === 'admin' ? adminNav : userNav,
+    },
+  ]
+
   return {
     user,
     teams: [
@@ -61,15 +80,6 @@ export const getSidebarData = (
         plan: 'Pro',
       },
     ],
-    navGroups: [
-      {
-        title: 'General',
-        items: [...commonNav, ...onboardingNav],
-      },
-      {
-        title: role === 'admin' ? 'Admin' : 'User',
-        items: role === 'admin' ? adminNav : userNav,
-      },
-    ],
+    navGroups,
   }
 }
