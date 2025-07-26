@@ -38,7 +38,8 @@ export default function AddProfile() {
       .eq('name', 'user') // ensure this is lowercase and matches your DB
       .limit(1)            // add safety
       .maybeSingle();      // <- safe version of single()
-    
+    console.log('Fetched roleData:', roleData)
+
     if (roleError || !roleData) {
       setError('Role "user" not found in roles table.')
       return
@@ -46,17 +47,18 @@ export default function AddProfile() {
     
 
     // ✅ 2. Insert profile with role_id
-    const { error: insertError } = await supabase.from('profiles').insert([
-      {
-        id: userId,
-        email,
-        full_name: fullName,
-        age: age === '' ? null : age,
-        address: address || null,
-        phone_number: phone || null,
-        role_id: '106dcdf0-5560-499a-b55a-076ccf96f165'
-      }
-    ])
+const { error: insertError } = await supabase.from('profiles').insert([
+  {
+    id: userId,
+    email,
+    full_name: fullName,
+    age: age === '' ? null : age,
+    address: address || null,
+    phone_number: phone || null,
+    role_id: roleData.id, // ✅ dynamic role_id from query result
+  }
+])
+
 
     if (insertError) {
       setError(insertError.message)
