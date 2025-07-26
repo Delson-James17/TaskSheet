@@ -34,74 +34,74 @@ export default function AddProfile() {
     }
   }
 
-const handleSubmit = async () => {
-  setError('')
-  if (!validate()) return
+  const handleSubmit = async () => {
+    setError('')
+    if (!validate()) return
 
-  let avatar_url = ''
+    let avatar_url = ''
 
-  try {
-    // Upload avatar to Supabase Storage
-    if (avatarFile) {
-  const fileExt = avatarFile.name.split('.').pop()
-  const filePath = `${userId}.${fileExt}`  // ✅ remove "avatars/"
+    try {
+      // Upload avatar to Supabase Storage
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split('.').pop()
+        const filePath = `${userId}.${fileExt}`
 
-  const { error: uploadError } = await supabase.storage
-    .from('avatars')
-    .upload(filePath, avatarFile, {
-      upsert: true,
-      cacheControl: '3600',
-      contentType: avatarFile.type,
-    })
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, avatarFile, {
+            upsert: true,
+            cacheControl: '3600',
+            contentType: avatarFile.type,
+          })
 
-  if (uploadError) {
-    setError('Failed to upload avatar')
-    return
-  }
+        if (uploadError) {
+          setError('Failed to upload avatar')
+          return
+        }
 
-  const { data: publicUrlData } = supabase.storage
-    .from('avatars')
-    .getPublicUrl(filePath)
+        const { data: publicUrlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath)
 
-  avatar_url = publicUrlData.publicUrl
-}
+        avatar_url = publicUrlData.publicUrl
+      }
 
+      // Insert new profile
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: userId,
+            full_name: fullName,
+            avatar_url,
+            role: 'user',
+          }
+        ])
 
-    // Update existing profile instead of insert
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        full_name: fullName,
-        avatar_url,
-        role: 'user', // optional, if you want to default every profile
-      })
-      .eq('id', userId)
+      if (insertError) {
+        setError('Failed to insert profile: ' + insertError.message)
+        return
+      }
 
-    if (updateError) {
-      setError('Failed to update profile: ' + updateError.message)
-      return
+      await fetch('/api/notify-admin', {
+        method: 'POST',
+        body: JSON.stringify({ userId, fullName }),
+        headers: { 'Content-Type': 'application/json' },
+      }).catch(console.warn)
+
+      localStorage.setItem('isNewUser', 'true')
+      navigate('/dashboard')
+
+    } catch (err: any) {
+      console.error(err)
+      setError('An unexpected error occurred')
     }
-
-    // Optional: Notify admin (just for async logging/notification)
-    await fetch('/api/notify-admin', {
-      method: 'POST',
-      body: JSON.stringify({ userId, fullName }),
-      headers: { 'Content-Type': 'application/json' },
-    }).catch(console.warn)
-
-    localStorage.setItem('isNewUser', 'true')
-    navigate('/dashboard')
-
-  } catch (err: any) {
-    console.error(err)
-    setError('An unexpected error occurred')
   }
-}
 
   return (
     <div className="flex justify-center items-center h-screen">
       <div className="bg-black p-6 shadow-md rounded w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">Complete Your Profile</h2>
+        <h2 className="text-xl font-bold mb-4 text-white">Complete Your Profile</h2>
 
         <input
           type="text"
