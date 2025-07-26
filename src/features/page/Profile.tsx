@@ -45,7 +45,7 @@ export default function Profile() {
 
       // Get user role from joined table
       const { data: roleData, error: roleError } = await supabase
-        .from('User_roles')
+        .from('user_roles')
         .select('roles(name)')
         .eq('user_id', user.id)
         .single()

@@ -25,17 +25,25 @@ export default function Dashboard() {
   const navigate = useNavigate()
 
   const fetchTodayTasks = async () => {
-    const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().split('T')[0]
 
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('id, start_time, end_time, total_hours, status, project:title')
-      .gte('start_time', `${today}T00:00:00`)
-      .order('start_time', { ascending: false })
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('id, start_time, end_time, total_hours, status, projects(title)')
+    .gte('start_time', `${today}T00:00:00`)
+    .order('start_time', { ascending: false })
 
-    if (error) console.error(error)
-    else setTasks(data as Task[])
+  if (error) {
+    console.error(error)
+  } else {
+    const transformed = data.map((task) => ({
+      ...task,
+      project: task.projects?.[0] || { title: 'Unknown' },
+    }))
+    setTasks(transformed as Task[])
   }
+}
+
 
   useEffect(() => {
     const fetchUserAndTasks = async () => {
@@ -52,7 +60,7 @@ export default function Dashboard() {
       })
 
       const { data: roleData, error: roleError } = await supabase
-        .from('User_roles')
+        .from('user_roles')
         .select('roles(name)')
         .eq('user_id', userId)
         .single()
