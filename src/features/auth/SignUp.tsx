@@ -53,12 +53,16 @@ export default function SignUp() {
   const user = session.data.session?.user
 
   if (user) {
-    await supabase.from('profiles').insert({
+    await supabase.from('user_profiles').insert({
       id: user.id,
+      email,
       full_name: '',
       avatar_url: '',
       role: 'user',
-    })
+      is_active: true,
+      is_locked: false,
+      failed_attempts: 0
+  })
   }
 
   alert('Check your email for a confirmation link.')

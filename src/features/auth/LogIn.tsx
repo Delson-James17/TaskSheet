@@ -36,7 +36,7 @@ export default function LogIn() {
 
   // Check if user is locked
   const { data: profile, error: profileError } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .select('is_locked')
     .eq('email', email)
     .single()
