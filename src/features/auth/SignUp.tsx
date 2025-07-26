@@ -26,34 +26,31 @@ export default function SignUp() {
   const navigate = useNavigate();
 
  const handleSignUp = async (e: React.FormEvent) => {
-  e.preventDefault();
+  e.preventDefault()
 
   if (password !== confirmPassword) {
-    setError('Passwords do not match');
-    return;
+    setError('Passwords do not match')
+    return
   }
 
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
+  const { error } = await supabase.auth.signUp({ email, password })
 
   if (error) {
-    if (error.code === 'weak_password') {
-      const reasons = (error as any).weak_password?.reasons || [];
-      if (reasons.includes('length')) {
-        setError('Password must be at least 6 characters.');
+    if (error.code === "weak_password") {
+      const reasons = (error as any).weak_password?.reasons || []
+      if (reasons.includes("length")) {
+        setError("Password must be at least 6 characters.")
       } else {
-        setError(error.message);
+        setError(error.message)
       }
     } else {
-      setError(error.message);
+      setError(error.message)
     }
-    return;
+    return
   }
 
-  const session = await supabase.auth.getSession();
-  const user = session.data.session?.user;
+  const session = await supabase.auth.getSession()
+  const user = session.data.session?.user
 
   if (user) {
     await supabase.from('profiles').insert({
@@ -61,12 +58,12 @@ export default function SignUp() {
       full_name: '',
       avatar_url: '',
       role: 'user',
-    });
+    })
   }
 
-  navigate('/add-profile');
-};
-
+  alert('Check your email for a confirmation link.')
+  navigate('/add-profile')
+}
     const validateEmail = (value: string) => {
     const regex = /^\S+@\S+\.\S+$/
     if (!regex.test(value)) {

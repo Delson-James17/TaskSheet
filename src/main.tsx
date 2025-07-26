@@ -15,10 +15,28 @@ async function prepareAndRenderApp() {
     const access_token = params.get('access_token')
     const refresh_token = params.get('refresh_token')
 
-    if (access_token && refresh_token) {
-      await supabase.auth.setSession({ access_token, refresh_token })
+if (access_token && refresh_token) {
+  await supabase.auth.setSession({ access_token, refresh_token })
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    if (profile) {
       window.history.replaceState(null, '', '/dashboard')
+    } else {
+      window.history.replaceState(null, '', '/add-profile')
     }
+  }
+}
+
   }
 
   createRoot(document.getElementById('root')!).render(
