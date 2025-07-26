@@ -4,7 +4,7 @@ import { BrowserRouter, Route, Navigate, Routes } from 'react-router-dom'
 import { supabase } from '@/utils/supabaseClient'
 import LogIn from './features/auth/LogIn.tsx'
 import SignUp from './features/auth/SignUp.tsx'
-import AddProfile from './features/page/AddProfile.tsx'
+import Profile from './features/page/Profile.tsx'
 import Dashboard from './features/page/Dashboard.tsx'
 import './index.css'
 
@@ -32,7 +32,7 @@ if (access_token && refresh_token) {
     if (profile) {
       window.history.replaceState(null, '', '/dashboard')
     } else {
-      window.history.replaceState(null, '', '/add-profile')
+      window.history.replaceState(null, '', '/profile')
     }
   }
 }
@@ -46,7 +46,7 @@ if (access_token && refresh_token) {
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<LogIn />} />
           <Route path="/signup" element={<SignUp />} />
-          <Route path="/add-profile" element={<AddProfile />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </BrowserRouter>
