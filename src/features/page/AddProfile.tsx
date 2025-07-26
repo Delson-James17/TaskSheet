@@ -43,28 +43,29 @@ const handleSubmit = async () => {
   try {
     // Upload avatar to Supabase Storage
     if (avatarFile) {
-      const fileExt = avatarFile.name.split('.').pop()
-      const filePath = `avatars/${userId}.${fileExt}`
+  const fileExt = avatarFile.name.split('.').pop()
+  const filePath = `${userId}.${fileExt}`  // ✅ remove "avatars/"
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, avatarFile, {
-          cacheControl: '3600',
-          upsert: true,
-          contentType: avatarFile.type,
-        })
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, avatarFile, {
+      upsert: true,
+      cacheControl: '3600',
+      contentType: avatarFile.type,
+    })
 
-      if (uploadError) {
-        setError('Failed to upload avatar')
-        return
-      }
+  if (uploadError) {
+    setError('Failed to upload avatar')
+    return
+  }
 
-      const { data: publicUrlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath)
+  const { data: publicUrlData } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(filePath)
 
-      avatar_url = publicUrlData.publicUrl
-    }
+  avatar_url = publicUrlData.publicUrl
+}
+
 
     // Update existing profile instead of insert
     const { error: updateError } = await supabase
@@ -96,7 +97,6 @@ const handleSubmit = async () => {
     setError('An unexpected error occurred')
   }
 }
-
 
   return (
     <div className="flex justify-center items-center h-screen">
