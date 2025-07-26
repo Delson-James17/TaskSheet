@@ -6,34 +6,59 @@ import { Pencil } from 'lucide-react'
 export default function Profile() {
   const [profile, setProfile] = useState<any>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [form, setForm] = useState({ full_name: '', age: '', address: '', phone_number: '' })
+  const [form, setForm] = useState({
+    full_name: '',
+    age: '',
+    address: '',
+    phone_number: ''
+  })
+  const [role, setRole] = useState('user')
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileAndRole = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return navigate('/login')
 
-      const { data, error } = await supabase
+      // Get profile data
+      const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', user.id)
         .single()
 
-      if (data) {
-        setProfile(data)
+      if (profileData) {
+        setProfile(profileData)
         setForm({
-          full_name: data.full_name || '',
-          age: data.age?.toString() || '',
-          address: data.address || '',
-          phone_number: data.phone_number || ''
+          full_name: profileData.full_name || '',
+          age: profileData.age?.toString() || '',
+          address: profileData.address || '',
+          phone_number: profileData.phone_number || ''
         })
       }
-      if (error) console.error('Error fetching profile:', error)
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError)
+        setError('Failed to load profile')
+      }
+
+      // Get user role from joined table
+      const { data: roleData, error: roleError } = await supabase
+        .from('User_roles')
+        .select('roles(name)')
+        .eq('user_id', user.id)
+        .single()
+
+      const userRole = roleData?.[0]?.roles?.name ?? 'user'
+      setRole(userRole)
+
+      if (roleError) {
+        console.error('Error fetching role:', roleError)
+      }
     }
 
-    fetchProfile()
+    fetchProfileAndRole()
   }, [navigate])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,6 +116,12 @@ export default function Profile() {
               )}
             </div>
           ))}
+
+          {/* Role field - read only */}
+          <div>
+            <label className="block">Role</label>
+            <p className="border p-2 rounded capitalize">{role}</p>
+          </div>
         </div>
 
         {error && <p className="text-red-500 mt-2">{error}</p>}

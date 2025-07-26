@@ -47,7 +47,7 @@ export const getSidebarData = (
     },
   ]
 
-  // Show onboarding if name is empty, null, or default placeholder
+  // Onboarding shown if user has no real name
   const isOnboarding = !user.name || user.name.toLowerCase() === 'unknown'
 
   const onboardingNav = isOnboarding
@@ -60,25 +60,6 @@ export const getSidebarData = (
       ]
     : []
 
-  const navGroups = [
-    {
-      title: 'General',
-      items: commonNav,
-    },
-    ...(onboardingNav.length > 0
-      ? [
-          {
-            title: 'Onboarding',
-            items: onboardingNav,
-          },
-        ]
-      : []),
-    {
-      title: role === 'admin' ? 'Admin' : 'User',
-      items: role === 'admin' ? adminNav : userNav,
-    },
-  ]
-
   return {
     user,
     teams: [
@@ -88,6 +69,23 @@ export const getSidebarData = (
         plan: 'Pro',
       },
     ],
-    navGroups,
+    navGroups: [
+      {
+        title: 'General',
+        items: commonNav,
+      },
+      ...(onboardingNav.length > 0
+        ? [
+            {
+              title: 'Onboarding',
+              items: onboardingNav,
+            },
+          ]
+        : []),
+      {
+        title: role === 'admin' ? 'Admin' : 'User',
+        items: role === 'admin' ? adminNav : userNav,
+      },
+    ],
   }
 }

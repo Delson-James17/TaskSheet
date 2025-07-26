@@ -3,7 +3,10 @@ import { supabase } from '@/utils/supabaseClient'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import {
+  Card, CardContent, CardFooter, CardHeader,
+  CardTitle, CardDescription
+} from "@/components/ui/card"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeToggle } from "@/components/switch-toggle"
 import { useNavigate } from 'react-router-dom'
@@ -21,28 +24,25 @@ export default function SignUp() {
 
   const validateEmail = (value: string) => {
     const regex = /^\S+@\S+\.\S+$/
-    if (!regex.test(value)) {
-      setEmailError('Please enter a valid email.')
-    } else {
-      setEmailError('')
-    }
+    if (!regex.test(value)) setEmailError('Please enter a valid email.')
+    else setEmailError('')
   }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+    setSuccessMessage('')
 
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       return
     }
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          full_name: fullName,
-        },
+        data: { full_name: fullName },
       },
     })
 
@@ -51,14 +51,55 @@ export default function SignUp() {
       return
     }
 
-    // Show confirmation message instead of alert
-    setSuccessMessage("Signup successful. Please check your email to confirm your account.")
+    const userId = signUpData.user?.id
+    if (!userId) {
+      setError("User ID missing after signup.")
+      return
+    }
 
-    // Optional: store intent to redirect post-confirmation
+    // Insert to user_profiles
+    const { error: profileError } = await supabase.from('user_profiles').insert({
+      id: userId,
+      full_name: fullName,
+      email,
+      is_active: true,
+      is_locked: false,
+      failed_attempts: 0
+    })
+
+    if (profileError) {
+      setError('Failed to create profile: ' + profileError.message)
+      return
+    }
+
+    // Assign default "user" role
+    const { data: roleData, error: roleLookupError } = await supabase
+      .from('roles')
+      .select('id')
+      .eq('name', 'user')
+      .single()
+
+    if (roleLookupError || !roleData) {
+      setError('Failed to retrieve role ID: ' + roleLookupError?.message)
+      return
+    }
+
+    const { error: roleInsertError } = await supabase.from('User_roles').insert({
+      user_id: userId,
+      role_id: roleData.id,
+      assigned_at: new Date().toISOString()
+    })
+
+    if (roleInsertError) {
+      setError('Failed to assign user role: ' + roleInsertError.message)
+      return
+    }
+
+    setSuccessMessage("Signup successful. Please check your email to confirm your account.")
     localStorage.setItem('awaitingConfirmation', 'true')
   }
 
-  // Automatically navigate once user is confirmed and logged in
+  // Auto-redirect once confirmed and logged in
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -71,7 +112,9 @@ export default function SignUp() {
     }
 
     checkSession()
-  }, [])
+    const interval = setInterval(checkSession, 3000)
+    return () => clearInterval(interval)
+  }, [navigate])
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
@@ -118,11 +161,8 @@ export default function SignUp() {
                     onChange={(e) => {
                       const val = e.target.value
                       setPassword(val)
-                      if (val.length < 6) {
-                        setPasswordError('Password must be at least 6 characters.')
-                      } else {
-                        setPasswordError('')
-                      }
+                      if (val.length < 6) setPasswordError('Password must be at least 6 characters.')
+                      else setPasswordError('')
                     }}
                     required
                   />
