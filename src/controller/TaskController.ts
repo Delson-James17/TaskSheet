@@ -1,16 +1,5 @@
 import { supabase } from '@/utils/supabaseClient'
 
-export async function startTask(projectId: string) {
-  const user = (await supabase.auth.getUser()).data.user
-  const { error } = await supabase.from('tasks').insert({
-    project_id: projectId,
-    user_id: user?.id,
-    start_time: new Date(),
-    status: 'started'
-  })
-  if (error) throw error
-}
-
 export async function pauseTask(taskId: string) {
   const { data: task } = await supabase.from('tasks').select('*').eq('id', taskId).single()
   const now = new Date()
@@ -22,14 +11,16 @@ export async function pauseTask(taskId: string) {
     accumulated_seconds: newAccumulated,
     status: 'paused'
   }).eq('id', taskId)
+
   if (error) throw error
 }
 
 export async function resumeTask(taskId: string) {
   const { error } = await supabase.from('tasks').update({
     resume_time: new Date(),
-    status: 'resumed'
+    status: 'running'
   }).eq('id', taskId)
+
   if (error) throw error
 }
 
@@ -51,4 +42,6 @@ export async function endTask(taskId: string) {
   }).eq('id', taskId)
 
   if (error) throw error
+
+  await supabase.from('task_bank').insert(task)
 }
