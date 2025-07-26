@@ -57,13 +57,18 @@ export default function SignUp() {
       return
     }
 
-    const { error: profileError } = await supabase.from('user_profiles').insert({
-      id: userId,
-      full_name: fullName,
-      is_active: true,
-      is_locked: false,
-      failed_attempts: 0
-    })
+    const { error: profileError } = await supabase.from('user_profiles').insert([
+      {
+        id: userId,               
+        email: email,
+        full_name: fullName,
+        role: 'user',             
+        is_active: true,
+        is_locked: false,
+        failed_attempts: 0,
+        created_at: new Date().toISOString(), 
+      }
+    ])
 
     if (profileError) {
       setError('Failed to create profile: ' + profileError.message)
