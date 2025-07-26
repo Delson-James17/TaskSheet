@@ -44,11 +44,12 @@ export default function Profile() {
       }
 
       // Get user role from joined table
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('roles(name)')
-        .eq('user_id', user.id)
-        .single()
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('roles(name)', { head: false })
+      .eq('user_id', user.id)
+      .maybeSingle(); // use maybeSingle to avoid breaking on empty result
+    
 
       const userRole = roleData?.[0]?.roles?.name ?? 'user'
       setRole(userRole)
