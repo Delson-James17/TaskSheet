@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { useNavigate } from 'react-router-dom'
 import { ThemeProvider } from "@/components/theme-provider"
 import {ThemeToggle} from "@/components/switch-toggle"
-// import {ModeToggle} from "@/components/mode-toggle"
 import {
   Card,
   CardAction,
