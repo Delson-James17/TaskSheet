@@ -31,40 +31,36 @@ export default function LogIn() {
   if (error) console.error('Google login error:', error.message)
 }
 
-  const handleLogIn = async (e: React.FormEvent) => {
+const handleLogIn = async (e: React.FormEvent) => {
   e.preventDefault();
+  setError('');
 
-  const { data: profile, error: profileError } = await supabase
+  const { data, error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (authError) {
+    setError("Invalid email or password.");
+    return;
+  }
+
+  const { data: profileData } = await supabase
     .from('user_profiles')
-    .select('is_locked')
-    .eq('email', email)
-    .maybeSingle()
+    .select('failed_attempts, is_locked, full_name, role')
+    .eq('id', data.user.id) 
+    .maybeSingle();
 
-
-  if (profileError) {
-    setError("User not found.")
-    return
-  }
-
-  if (profile?.is_locked) {
-    setError("Your account is locked due to 5 failed attempts.")
-    return
-  }
-
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-  if (error) {
-    await supabase.rpc('increment_failed_attempts', { email_param: email })
-    setError("Invalid email or password.")
-  } else {
+  if (profileData?.failed_attempts > 0 || profileData?.is_locked) {
     await supabase
-      .from('profiles')
+      .from('user_profiles')
       .update({ failed_attempts: 0, is_locked: false })
-      .eq('email', email)
-
-    navigate('/dashboard')
+      .eq('id', data.user.id);
   }
-}
+
+  navigate('/dashboard');
+};
+
   return (
    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
     <div className="w-screen h-screen flex items-center justify-center bg-background">
