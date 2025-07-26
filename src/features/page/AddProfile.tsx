@@ -27,46 +27,59 @@ export default function AddProfile() {
     fetchUser()
   }, [navigate])
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
+const handleSave = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setError('')
+  setSuccess('')
 
-    const { data: roleData, error: roleError } = await supabase
-      .from('roles')
-      .select('id')
-      .eq('name', 'user') // ensure this is lowercase and matches your DB
-      .limit(1)            // add safety
-      .maybeSingle();      // <- safe version of single()
-    console.log('Fetched roleData:', roleData)
+  const { data: roleData, error: roleError } = await supabase
+    .from('roles')
+    .select('id')
+    .eq('name', 'user')
+    .limit(1)
+    .maybeSingle()
 
-    if (roleError || !roleData) {
-      setError('Role "user" not found in roles table.')
-      return
-    }
-    
-
-    // ✅ 2. Insert profile with role_id
-const { error: insertError } = await supabase.from('profiles').insert([
-  {
-    id: userId,
-    email,
-    full_name: fullName,
-    age: age === '' ? null : age,
-    address: address || null,
-    phone_number: phone || null,
-    role_id: roleData.id, // ✅ dynamic role_id from query result
+  if (roleError || !roleData) {
+    setError('Role "user" not found in roles table.')
+    return
   }
-])
 
-
-    if (insertError) {
-      setError(insertError.message)
-    } else {
-      setSuccess('Profile saved successfully!')
-      navigate('/dashboard')
+  // 1. Insert profile
+  const { error: insertError } = await supabase.from('profiles').insert([
+    {
+      id: userId,
+      email,
+      full_name: fullName,
+      age: age === '' ? null : age,
+      address: address || null,
+      phone_number: phone || null,
+      role_id: roleData.id
     }
+  ])
+
+  if (insertError) {
+    setError(insertError.message)
+    return
   }
+
+  // 2. Insert into user_roles
+  const { error: userRoleError } = await supabase.from('user_roles').insert([
+    {
+      user_id: userId,
+      role_id: roleData.id,
+      assigned_at: new Date().toISOString()
+    }
+  ])
+
+  if (userRoleError) {
+    setError('Failed to assign role: ' + userRoleError.message)
+    return
+  }
+
+  setSuccess('Profile saved successfully!')
+  navigate('/dashboard')
+}
+
 
   return (
     <div className="flex items-center justify-center h-screen px-4">
