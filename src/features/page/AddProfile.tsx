@@ -32,6 +32,19 @@ export default function AddProfile() {
     setError('')
     setSuccess('')
 
+    // ✅ 1. Get role_id for 'user'
+    const { data: roleData, error: roleError } = await supabase
+      .from('roles')
+      .select('id')
+      .eq('name', 'user')
+      .single()
+
+    if (roleError || !roleData) {
+      setError('Failed to get role for user')
+      return
+    }
+
+    // ✅ 2. Insert profile with role_id
     const { error: insertError } = await supabase.from('profiles').insert([
       {
         id: userId,
@@ -40,6 +53,7 @@ export default function AddProfile() {
         age: age === '' ? null : age,
         address: address || null,
         phone_number: phone || null,
+        role_id: roleData.id, // ✅ insert the role_id here
       }
     ])
 
