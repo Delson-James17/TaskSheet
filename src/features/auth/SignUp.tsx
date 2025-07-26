@@ -57,11 +57,9 @@ export default function SignUp() {
       return
     }
 
-    // Insert to user_profiles
     const { error: profileError } = await supabase.from('user_profiles').insert({
       id: userId,
       full_name: fullName,
-      email,
       is_active: true,
       is_locked: false,
       failed_attempts: 0
