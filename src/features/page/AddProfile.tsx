@@ -34,46 +34,54 @@ export default function AddProfile() {
     }
   }
 
-  const handleSubmit = async () => {
-    setError('')
-    if (!validate()) return
+const handleSubmit = async () => {
+  setError('')
+  if (!validate()) return
 
-    let avatar_url = ''
+  let avatar_url = ''
 
+  try {
+    // Upload avatar to Supabase Storage
     if (avatarFile) {
       const fileExt = avatarFile.name.split('.').pop()
       const filePath = `avatars/${userId}.${fileExt}`
 
       const { error: uploadError } = await supabase.storage
-         .from('avatars')
-         .upload(filePath, avatarFile, {
-           cacheControl: '3600',
-           upsert: true, 
-           contentType: avatarFile.type,
-         })
+        .from('avatars')
+        .upload(filePath, avatarFile, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: avatarFile.type,
+        })
 
       if (uploadError) {
         setError('Failed to upload avatar')
         return
       }
 
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
-      avatar_url = data.publicUrl
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+
+      avatar_url = publicUrlData.publicUrl
     }
 
-    const { error: insertError } = await supabase.from('profiles').insert({
-      id: userId,
-      full_name: fullName,
-      avatar_url,
-      role: 'user',
-    })
+    // Update existing profile instead of insert
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        full_name: fullName,
+        avatar_url,
+        role: 'user', // optional, if you want to default every profile
+      })
+      .eq('id', userId)
 
-    if (insertError) {
-      setError('Failed to save profile: ' + insertError.message)
+    if (updateError) {
+      setError('Failed to update profile: ' + updateError.message)
       return
     }
 
-    // Optional: Send notification email to admin (implement via Supabase function or backend API)
+    // Optional: Notify admin (just for async logging/notification)
     await fetch('/api/notify-admin', {
       method: 'POST',
       body: JSON.stringify({ userId, fullName }),
@@ -82,7 +90,13 @@ export default function AddProfile() {
 
     localStorage.setItem('isNewUser', 'true')
     navigate('/dashboard')
+
+  } catch (err: any) {
+    console.error(err)
+    setError('An unexpected error occurred')
   }
+}
+
 
   return (
     <div className="flex justify-center items-center h-screen">
