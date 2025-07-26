@@ -12,12 +12,26 @@ export default function AddProfile() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) setUserId(user.id)
+  const getUser = async () => {
+    const { data: { session }, error } = await supabase.auth.getSession()
+    if (!session || error) {
+      console.error('No valid session:', error)
+      navigate('/login')
+      return
     }
-    getUser()
-  }, [])
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      setUserId(user.id)
+    } else {
+      console.error('User not found')
+      navigate('/login')
+    }
+  }
+
+  getUser()
+}, [])
+
 
   const validate = () => {
     if (!fullName.trim()) return setError('Full name is required'), false
@@ -27,43 +41,38 @@ export default function AddProfile() {
     return true
   }
 
-  const handleSubmit = async () => {
-    setError('')
-    if (!validate()) return
+const handleSubmit = async () => {
+  setError('')
+  if (!validate()) return
 
-    try {
-      const { error: insertError } = await supabase
-        .from('user_profiles')
-        .insert([
-          {
-            id: userId,
-            full_name: fullName,
-            age: parseInt(age),
-            address,
-            phone_number: phoneNumber,
-            role: 'user',
-          }
-        ])
-
-      if (insertError) {
-        setError('Failed to insert profile: ' + insertError.message)
-        return
-      }
-
-      await fetch('/api/notify-admin', {
-        method: 'POST',
-        body: JSON.stringify({ userId, fullName }),
-        headers: { 'Content-Type': 'application/json' },
-      }).catch(console.warn)
-
-      localStorage.setItem('isNewUser', 'true')
-      navigate('/dashboard')
-
-    } catch (err: any) {
-      console.error(err)
-      setError('An unexpected error occurred')
-    }
+  if (!userId) {
+    setError('User ID not found. Try logging in again.')
+    return
   }
+
+  try {
+    const { error: insertError } = await supabase
+      .from('user_profiles')
+      .insert([{
+        id: userId,
+        full_name: fullName,
+        role: 'user',
+        is_active: true,
+        failed_attempts: 0,
+        is_locked: false,
+      }])
+
+    if (insertError) {
+      setError('Failed to insert profile: ' + insertError.message)
+      return
+    }
+
+    navigate('/dashboard')
+  } catch (err: any) {
+    console.error(err)
+    setError('Unexpected error occurred')
+  }
+}
 
   return (
     <div className="flex justify-center items-center h-screen">
