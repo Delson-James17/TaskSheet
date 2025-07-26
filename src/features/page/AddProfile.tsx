@@ -32,17 +32,18 @@ export default function AddProfile() {
     setError('')
     setSuccess('')
 
-    // ✅ 1. Get role_id for 'user'
     const { data: roleData, error: roleError } = await supabase
       .from('roles')
       .select('id')
-      .eq('name', 'user')
-      .single()
-
+      .eq('name', 'user') // ensure this is lowercase and matches your DB
+      .limit(1)            // add safety
+      .maybeSingle();      // <- safe version of single()
+    
     if (roleError || !roleData) {
-      setError('Failed to get role for user')
+      setError('Role "user" not found in roles table.')
       return
     }
+    
 
     // ✅ 2. Insert profile with role_id
     const { error: insertError } = await supabase.from('profiles').insert([
