@@ -25,7 +25,7 @@ export default function LogIn() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'https://task-sheet-beta.vercel.app/dashboard'
+      redirectTo: 'https://task-sheet-beta.vercel.app/'
     }
   })
   if (error) console.error('Google login error:', error.message)
