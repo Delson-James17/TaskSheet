@@ -6,6 +6,7 @@ import LogIn from './features/auth/LogIn.tsx'
 import SignUp from './features/auth/SignUp.tsx'
 import Dashboard from './features/page/Dashboard.tsx'
 import Profile from './features/page/Profile.tsx'
+import AddProfile from './features/page/AddProfile.tsx' // ✅ New
 import './index.css'
 
 async function prepareAndRenderApp() {
@@ -17,7 +18,7 @@ async function prepareAndRenderApp() {
 
     if (access_token && refresh_token) {
       await supabase.auth.setSession({ access_token, refresh_token })
-      window.history.replaceState(null, '', '/dashboard')
+      window.history.replaceState(null, '', '/add-profile') // ✅ Redirect to add-profile
     }
   }
 
@@ -28,6 +29,7 @@ async function prepareAndRenderApp() {
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<LogIn />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/add-profile" element={<AddProfile />} /> {/* ✅ Add this */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>

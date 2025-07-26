@@ -37,7 +37,7 @@ export default function SignUp() {
       return
     }
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -50,34 +50,11 @@ export default function SignUp() {
       return
     }
 
-    const userId = signUpData.user?.id
-    if (!userId) {
-      setError("User ID missing after signup.")
-      return
-    }
-
-    const { error: profileError } = await supabase.from('profiles').insert([
-      {
-        id: userId,
-        email,
-        full_name: fullName,
-        is_active: true,
-        is_locked: false,
-        failed_attempts: 0,
-        created_at: new Date().toISOString(),
-      }
-    ])
-
-    if (profileError) {
-      setError('Failed to create profile: ' + profileError.message)
-      return
-    }
-
     setSuccessMessage("Signup successful. Please check your email to confirm your account.")
     localStorage.setItem('awaitingConfirmation', 'true')
   }
 
-  // Auto-redirect once confirmed
+  // After confirmation, redirect to /add-profile
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -85,7 +62,7 @@ export default function SignUp() {
 
       if (session && confirmed && localStorage.getItem('awaitingConfirmation')) {
         localStorage.removeItem('awaitingConfirmation')
-        navigate('/dashboard')
+        navigate('/add-profile')
       }
     }
 
