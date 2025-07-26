@@ -34,7 +34,6 @@ export default function Dashboard() {
         avatar: authUser.user_metadata?.avatar_url ?? '',
       })
 
-      // ✅ Fetch role from profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
