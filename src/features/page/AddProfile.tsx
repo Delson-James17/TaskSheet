@@ -62,20 +62,6 @@ const handleSave = async (e: React.FormEvent) => {
     return
   }
 
-  // 2. Insert into user_roles
-  const { error: userRoleError } = await supabase.from('user_roles').insert([
-    {
-      user_id: userId,
-      role_id: roleData.id,
-      assigned_at: new Date().toISOString()
-    }
-  ])
-
-  if (userRoleError) {
-    setError('Failed to assign role: ' + userRoleError.message)
-    return
-  }
-
   setSuccess('Profile saved successfully!')
   navigate('/dashboard')
 }
