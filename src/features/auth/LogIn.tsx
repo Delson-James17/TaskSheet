@@ -34,12 +34,12 @@ export default function LogIn() {
   const handleLogIn = async (e: React.FormEvent) => {
   e.preventDefault();
 
-  // Check if user is locked
   const { data: profile, error: profileError } = await supabase
     .from('user_profiles')
     .select('is_locked')
     .eq('email', email)
-    .single()
+    .maybeSingle()
+
 
   if (profileError) {
     setError("User not found.")
