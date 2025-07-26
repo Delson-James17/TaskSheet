@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom'
 
 export default function AddProfile() {
   const [fullName, setFullName] = useState('')
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [age, setAge] = useState('')
+  const [address, setAddress] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
   const [userId, setUserId] = useState('')
   const [error, setError] = useState('')
   const navigate = useNavigate()
@@ -19,61 +20,27 @@ export default function AddProfile() {
   }, [])
 
   const validate = () => {
-    if (!fullName.trim()) {
-      setError('Full name is required')
-      return false
-    }
+    if (!fullName.trim()) return setError('Full name is required'), false
+    if (!age.trim()) return setError('Age is required'), false
+    if (!address.trim()) return setError('Address is required'), false
+    if (!phoneNumber.trim()) return setError('Phone number is required'), false
     return true
-  }
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setAvatarFile(file)
-      setAvatarPreview(URL.createObjectURL(file))
-    }
   }
 
   const handleSubmit = async () => {
     setError('')
     if (!validate()) return
 
-    let avatar_url = ''
-
     try {
-      // Upload avatar to Supabase Storage
-      if (avatarFile) {
-        const fileExt = avatarFile.name.split('.').pop()
-        const filePath = `${userId}.${fileExt}`
-
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(filePath, avatarFile, {
-            upsert: true,
-            cacheControl: '3600',
-            contentType: avatarFile.type,
-          })
-
-        if (uploadError) {
-          setError('Failed to upload avatar')
-          return
-        }
-
-        const { data: publicUrlData } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(filePath)
-
-        avatar_url = publicUrlData.publicUrl
-      }
-
-      // Insert new profile
       const { error: insertError } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .insert([
           {
             id: userId,
             full_name: fullName,
-            avatar_url,
+            age: parseInt(age),
+            address,
+            phone_number: phoneNumber,
             role: 'user',
           }
         ])
@@ -112,19 +79,28 @@ export default function AddProfile() {
         />
 
         <input
-          type="file"
-          accept="image/*"
-          onChange={handleAvatarChange}
-          className="mb-4"
+          type="number"
+          placeholder="Age"
+          value={age}
+          onChange={(e) => setAge(e.target.value)}
+          className="border p-2 rounded w-full mb-4"
         />
 
-        {avatarPreview && (
-          <img
-            src={avatarPreview}
-            alt="Avatar Preview"
-            className="w-24 h-24 rounded-full object-cover mb-4"
-          />
-        )}
+        <input
+          type="text"
+          placeholder="Address"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          className="border p-2 rounded w-full mb-4"
+        />
+
+        <input
+          type="tel"
+          placeholder="Phone Number"
+          value={phoneNumber}
+          onChange={(e) => setPhoneNumber(e.target.value)}
+          className="border p-2 rounded w-full mb-4"
+        />
 
         {error && (
           <div className="text-red-500 mb-2">{error}</div>
