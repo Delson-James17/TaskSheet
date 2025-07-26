@@ -16,7 +16,6 @@ type Props = React.ComponentProps<typeof Sidebar> & {
 }
 
 export function AppSidebar({ user, role, ...props }: Props) {
-  // ✅ Correct usage: call the function to get the actual sidebar data object
   const sidebarData = getSidebarData(user, role)
 
   return (

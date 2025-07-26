@@ -8,8 +8,14 @@ import {
 import { Command } from 'lucide-react'
 import { type SidebarData } from '../types'
 
+type UserWithAvatar = {
+  name: string
+  email: string
+  avatar: string
+}
+
 export const getSidebarData = (
-  user: { name: string; email: string; avatar: string },
+  user: UserWithAvatar,
   role: string
 ): SidebarData => {
   const commonNav = [
@@ -41,21 +47,23 @@ export const getSidebarData = (
     },
   ]
 
-  const onboardingNav =
-    user.name === 'Unknown'
-      ? [
-          {
-            title: 'Add Profile',
-            url: '/add-profile',
-            icon: IconUserPlus,
-          },
-        ]
-      : []
+  // Show onboarding if name is empty, null, or default placeholder
+  const isOnboarding = !user.name || user.name.toLowerCase() === 'unknown'
+
+  const onboardingNav = isOnboarding
+    ? [
+        {
+          title: 'Add Profile',
+          url: '/add-profile',
+          icon: IconUserPlus,
+        },
+      ]
+    : []
 
   const navGroups = [
     {
       title: 'General',
-      items: [...commonNav],
+      items: commonNav,
     },
     ...(onboardingNav.length > 0
       ? [
