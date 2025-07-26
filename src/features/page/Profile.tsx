@@ -23,7 +23,7 @@ export default function Profile() {
 
       // Get profile data
       const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single()
@@ -71,7 +71,7 @@ export default function Profile() {
     if (!user) return
 
     const { error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .update({
         full_name: form.full_name,
         age: parseInt(form.age),
