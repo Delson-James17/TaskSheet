@@ -24,8 +24,7 @@ export default function SignUp() {
 
   const validateEmail = (value: string) => {
     const regex = /^\S+@\S+\.\S+$/
-    if (!regex.test(value)) setEmailError('Please enter a valid email.')
-    else setEmailError('')
+    setEmailError(regex.test(value) ? '' : 'Please enter a valid email.')
   }
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -57,16 +56,15 @@ export default function SignUp() {
       return
     }
 
-    const { error: profileError } = await supabase.from('user_profiles').insert([
+    const { error: profileError } = await supabase.from('profiles').insert([
       {
-        id: userId,               
-        email: email,
+        id: userId,
+        email,
         full_name: fullName,
-        role: 'user',             
         is_active: true,
         is_locked: false,
         failed_attempts: 0,
-        created_at: new Date().toISOString(), 
+        created_at: new Date().toISOString(),
       }
     ])
 
@@ -75,34 +73,11 @@ export default function SignUp() {
       return
     }
 
-    // Assign default "user" role
-    const { data: roleData, error: roleLookupError } = await supabase
-      .from('roles')
-      .select('id')
-      .eq('name', 'user')
-      .single()
-
-    if (roleLookupError || !roleData) {
-      setError('Failed to retrieve role ID: ' + roleLookupError?.message)
-      return
-    }
-
-    const { error: roleInsertError } = await supabase.from('User_roles').insert({
-      user_id: userId,
-      role_id: roleData.id,
-      assigned_at: new Date().toISOString()
-    })
-
-    if (roleInsertError) {
-      setError('Failed to assign user role: ' + roleInsertError.message)
-      return
-    }
-
     setSuccessMessage("Signup successful. Please check your email to confirm your account.")
     localStorage.setItem('awaitingConfirmation', 'true')
   }
 
-  // Auto-redirect once confirmed and logged in
+  // Auto-redirect once confirmed
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -164,8 +139,7 @@ export default function SignUp() {
                     onChange={(e) => {
                       const val = e.target.value
                       setPassword(val)
-                      if (val.length < 6) setPasswordError('Password must be at least 6 characters.')
-                      else setPasswordError('')
+                      setPasswordError(val.length < 6 ? 'Password must be at least 6 characters.' : '')
                     }}
                     required
                   />
