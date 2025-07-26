@@ -45,8 +45,12 @@ export default function AddProfile() {
       const filePath = `avatars/${userId}.${fileExt}`
 
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, avatarFile, { upsert: true })
+         .from('avatars')
+         .upload(filePath, avatarFile, {
+           cacheControl: '3600',
+           upsert: true, 
+           contentType: avatarFile.type,
+         })
 
       if (uploadError) {
         setError('Failed to upload avatar')
@@ -82,7 +86,7 @@ export default function AddProfile() {
 
   return (
     <div className="flex justify-center items-center h-screen">
-      <div className="bg-white p-6 shadow-md rounded w-full max-w-md">
+      <div className="bg-black p-6 shadow-md rounded w-full max-w-md">
         <h2 className="text-xl font-bold mb-4">Complete Your Profile</h2>
 
         <input
