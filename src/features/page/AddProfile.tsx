@@ -32,7 +32,7 @@ export default function AddProfile() {
     setError('')
     setSuccess('')
 
-    const { error: insertError } = await supabase.from('profiles').upsert([
+    const { error: insertError } = await supabase.from('profiles').insert([
       {
         id: userId,
         email,
