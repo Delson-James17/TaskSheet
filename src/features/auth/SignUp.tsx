@@ -62,7 +62,7 @@ export default function SignUp() {
   }
 
   alert('Check your email for a confirmation link.')
-  navigate('/login')
+  navigate('/add-profile')
 }
     const validateEmail = (value: string) => {
     const regex = /^\S+@\S+\.\S+$/

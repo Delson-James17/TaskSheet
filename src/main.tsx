@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Navigate, Routes } from 'react-router-dom'
 import { supabase } from '@/utils/supabaseClient'
 import LogIn from './features/auth/LogIn.tsx'
 import SignUp from './features/auth/SignUp.tsx'
+import AddProfile from './features/page/AddProfile.tsx'
 import Dashboard from './features/page/Dashboard.tsx'
 import './index.css'
 
@@ -27,6 +28,7 @@ async function prepareAndRenderApp() {
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<LogIn />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/add-profile" element={<AddProfile />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </BrowserRouter>

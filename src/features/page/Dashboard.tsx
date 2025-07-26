@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [user, setUser] = useState({ name: '', email: '', avatar: '' })
   const [role, setRole] = useState('user')
   const navigate = useNavigate()
+  const [isNewUser, setIsNewUser] = useState(false)
 
   const fetchTodayTasks = async () => {
     const today = new Date().toISOString().split('T')[0]
@@ -36,44 +37,61 @@ export default function Dashboard() {
     else setTasks(data as Task[])
   }
 
-  useEffect(() => {
-    const fetchUserAndTasks = async () => {
-      const { data: session } = await supabase.auth.getSession()
-      if (!session.session) return navigate('/login')
+useEffect(() => {
+  const fetchUserAndTasks = async () => {
+    const { data: session } = await supabase.auth.getSession()
+    if (!session.session) return navigate('/add-profile')
 
-      const userId = session.session.user.id
-      const { user: authUser } = session.session
+    const userId = session.session.user.id
+    const { user: authUser } = session.session
 
-      setUser({
-        name: authUser.user_metadata?.name ?? 'Unknown',
-        email: authUser.email ?? '',
-        avatar: authUser.user_metadata?.avatar_url ?? '',
-      })
+    setUser({
+      name: authUser.user_metadata?.name ?? 'Unknown',
+      email: authUser.email ?? '',
+      avatar: authUser.user_metadata?.avatar_url ?? '',
+    })
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .single()
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()
 
-      if (profileError || !profile) return
+    if (profileError || !profile) return
 
-      setRole(profile.role)
+    setRole(profile.role)
 
-      if (profile.role !== 'admin') {
-        await fetchTodayTasks()
-      }
+    if (profile.role !== 'admin') {
+      await fetchTodayTasks()
     }
 
-    fetchUserAndTasks()
-  }, [])
+    if (localStorage.getItem('isNewUser') === 'true') {
+      setIsNewUser(true)
+      localStorage.removeItem('isNewUser')
+    }
+  }
+
+  fetchUserAndTasks()
+}, [])
+
 
   return (
     <div className="flex min-h-screen bg-background">
       <SidebarProvider>
         <AppSidebar user={user} role={role} />
-
+        
         <div className="flex-1 ml-64 px-6 py-10">
+          {isNewUser && (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 ml-64 mt-4 mr-6">
+                    🎉 Welcome to TaskSheet! Here are 3 things to get started:
+                   <ul className="list-disc ml-6 mt-2 text-sm">
+                     <li>⏳ Start tracking your first task</li>
+                     <li>📁 Switch projects using the dropdown</li>
+                     <li>🧑‍💼 Update your profile anytime</li>
+                   </ul>
+               </div>
+          )}
+
           <h1 className="text-3xl font-bold mb-6">My Task Sheet</h1>
 
           <ProjectSelector fetchTasks={fetchTodayTasks} />

@@ -31,12 +31,40 @@ export default function LogIn() {
   if (error) console.error('Google login error:', error.message)
 }
 
-  const handleLogIn = async (e: React.FormEvent) =>{
-    e.preventDefault();
-    const {error} = await supabase.auth.signInWithPassword({email,password})
-    if (error) setError(error.message)
-    else navigate ('/dashboard') 
+  const handleLogIn = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  // Check if user is locked
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('is_locked')
+    .eq('email', email)
+    .single()
+
+  if (profileError) {
+    setError("User not found.")
+    return
   }
+
+  if (profile?.is_locked) {
+    setError("Your account is locked due to 5 failed attempts.")
+    return
+  }
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+  if (error) {
+    await supabase.rpc('increment_failed_attempts', { email_param: email })
+    setError("Invalid email or password.")
+  } else {
+    await supabase
+      .from('profiles')
+      .update({ failed_attempts: 0, is_locked: false })
+      .eq('email', email)
+
+    navigate('/dashboard')
+  }
+}
   return (
    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
     <div className="w-screen h-screen flex items-center justify-center bg-background">

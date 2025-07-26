@@ -3,6 +3,7 @@ import {
   IconUsers,
   IconSettings,
   IconLock,
+  IconUserPlus,
 } from '@tabler/icons-react'
 import { Command } from 'lucide-react'
 import { type SidebarData } from '../types'
@@ -14,19 +15,42 @@ export const getSidebarData = (
   const commonNav = [
     {
       title: 'Dashboard',
-      url: '/',
+      url: '/dashboard',
       icon: IconLayoutDashboard,
     },
   ]
 
   const adminNav = [
-    { title: 'Manage Users', url: '/admin/users', icon: IconUsers },
-    { title: 'Settings', url: '/admin/settings', icon: IconSettings },
+    {
+      title: 'Manage Users',
+      url: '/admin/users',
+      icon: IconUsers,
+    },
+    {
+      title: 'Settings',
+      url: '/admin/settings',
+      icon: IconSettings,
+    },
   ]
 
   const userNav = [
-    { title: 'Profile', url: '/profile', icon: IconLock },
+    {
+      title: 'Profile',
+      url: '/profile',
+      icon: IconLock,
+    },
   ]
+
+  const onboardingNav =
+    user.name === 'Unknown'
+      ? [
+          {
+            title: 'Add Profile',
+            url: '/add-profile',
+            icon: IconUserPlus,
+          },
+        ]
+      : []
 
   return {
     user,
@@ -40,7 +64,7 @@ export const getSidebarData = (
     navGroups: [
       {
         title: 'General',
-        items: commonNav,
+        items: [...commonNav, ...onboardingNav],
       },
       {
         title: role === 'admin' ? 'Admin' : 'User',
