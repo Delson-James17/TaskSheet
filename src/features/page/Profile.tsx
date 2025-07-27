@@ -43,21 +43,25 @@ export default function Profile() {
         setError('Failed to load profile')
       }
 
-      // Get user role from joined table
-    const { data: roleData, error: roleError } = await supabase
+    type RoleJoinResult = {
+        roles: {
+        name: string;
+      };
+    };
+
+    const { data: roleData,error: roleError,} = await supabase
       .from('user_roles')
-      .select('roles(name)', { head: false })
+      .select('roles(name)')
       .eq('user_id', user.id)
-      .maybeSingle(); // use maybeSingle to avoid breaking on empty result
-    
+      .maybeSingle() as { data: RoleJoinResult | null, error: any }; 
 
-      const userRole = roleData?.[0]?.roles?.name ?? 'user'
-      setRole(userRole)
+    const userRole = roleData?.roles?.name ?? 'user';
+    setRole(userRole);
 
-      if (roleError) {
-        console.error('Error fetching role:', roleError)
-      }
+    if (roleError) {
+      console.error('Error fetching role:', roleError);
     }
+}
 
     fetchProfileAndRole()
   }, [navigate])

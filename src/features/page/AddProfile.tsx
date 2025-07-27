@@ -44,23 +44,34 @@ const handleSave = async (e: React.FormEvent) => {
     return
   }
 
-  // 1. Insert profile
-  const { error: insertError } = await supabase.from('profiles').insert([
-    {
-      id: userId,
-      email,
-      full_name: fullName,
-      age: age === '' ? null : age,
-      address: address || null,
-      phone_number: phone || null,
-      role_id: roleData.id
-    }
-  ])
-
-  if (insertError) {
-    setError(insertError.message)
-    return
+const { error: profileError } = await supabase.from('profiles').insert([
+  {
+    id: userId,
+    email,
+    full_name: fullName,
+    age: age === '' ? null : age,
+    address: address || null,
+    phone_number: phone || null
   }
+])
+
+if (profileError) {
+  setError(profileError.message)
+  return
+}
+
+const { error: roleInsertError } = await supabase.from('user_roles').insert([
+  {
+    user_id: userId,
+    role_id: roleData.id
+  }
+])
+
+if (roleInsertError) {
+  setError(roleInsertError.message)
+  return
+}
+
 
   setSuccess('Profile saved successfully!')
   navigate('/dashboard')

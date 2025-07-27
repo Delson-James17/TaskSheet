@@ -59,13 +59,19 @@ export default function Dashboard() {
         avatar: authUser.user_metadata?.avatar_url ?? '',
       })
 
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('roles(name)')
-        .eq('user_id', userId)
-        .single()
+    type RoleJoinResult = {
+      roles: {
+        name: string;
+      };
+    };
 
-      const userRole = roleData?.[0]?.roles?.name ?? 'user'
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('roles(name)')
+      .eq('user_id', userId)
+      .maybeSingle() as { data: RoleJoinResult | null, error: any };
+      
+      const userRole = roleData?.roles?.name ?? 'user';
       setRole(userRole)
       if (roleError) {
         console.error('Error fetching role:', roleError)
