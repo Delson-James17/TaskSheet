@@ -22,42 +22,53 @@ export default function AddProfile() {
       const { data: { user }, error } = await supabase.auth.getUser()
       if (error || !user) return navigate('/login')
       setUserId(user.id)
-      setEmail(user.email ?? '')
+
+      // Fetch email and full_name from profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError || !profileData) {
+        setError('Failed to load profile information')
+        return
+      }
+
+      setEmail(profileData.email ?? '')
+      setFullName(profileData.full_name ?? '')
     }
     fetchUser()
   }, [navigate])
 
-const handleSave = async (e: React.FormEvent) => {
-  e.preventDefault()
-  setError('')
-  setSuccess('')
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
 
-  const { error: profileError } = await supabase.from('profiles').insert([
-    {
-      id: userId,
-      email,
-      full_name: fullName,
-      age: age === '' ? null : age,
-      address: address || null,
-      phone_number: phone || null
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        age: age === '' ? null : age,
+        address: address || null,
+        phone_number: phone || null
+      })
+      .eq('id', userId)
+
+    if (profileError) {
+      setError(profileError.message)
+      return
     }
-  ])
 
-  if (profileError) {
-    setError(profileError.message)
-    return
+    setSuccess('Profile updated successfully!')
+    navigate('/dashboard')
   }
-
-  setSuccess('Profile saved successfully!')
-  navigate('/dashboard')
-}
-
 
   return (
     <div className="flex items-center justify-center h-screen px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Add Profile</CardTitle>
+          <CardTitle>Complete Profile</CardTitle>
         </CardHeader>
         <form onSubmit={handleSave}>
           <CardContent className="flex flex-col gap-4">
@@ -67,7 +78,7 @@ const handleSave = async (e: React.FormEvent) => {
             </div>
             <div>
               <Label>Full Name</Label>
-              <Input value={fullName} onChange={e => setFullName(e.target.value)} required />
+              <Input value={fullName} disabled />
             </div>
             <div>
               <Label>Age</Label>
