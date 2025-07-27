@@ -32,46 +32,21 @@ const handleSave = async (e: React.FormEvent) => {
   setError('')
   setSuccess('')
 
-  const { data: roleData, error: roleError } = await supabase
-    .from('roles')
-    .select('id')
-    .eq('name', 'user')
-    .limit(1)
-    .maybeSingle()
+  const { error: profileError } = await supabase.from('profiles').insert([
+    {
+      id: userId,
+      email,
+      full_name: fullName,
+      age: age === '' ? null : age,
+      address: address || null,
+      phone_number: phone || null
+    }
+  ])
 
-  if (roleError || !roleData) {
-    setError('Role "user" not found in roles table.')
+  if (profileError) {
+    setError(profileError.message)
     return
   }
-
-const { error: profileError } = await supabase.from('profiles').insert([
-  {
-    id: userId,
-    email,
-    full_name: fullName,
-    age: age === '' ? null : age,
-    address: address || null,
-    phone_number: phone || null
-  }
-])
-
-if (profileError) {
-  setError(profileError.message)
-  return
-}
-
-const { error: roleInsertError } = await supabase.from('user_roles').insert([
-  {
-    user_id: userId,
-    role_id: roleData.id
-  }
-])
-
-if (roleInsertError) {
-  setError(roleInsertError.message)
-  return
-}
-
 
   setSuccess('Profile saved successfully!')
   navigate('/dashboard')
