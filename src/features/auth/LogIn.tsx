@@ -46,14 +46,14 @@ const handleLogIn = async (e: React.FormEvent) => {
   }
 
   const { data: profileData } = await supabase
-    .from('user_profiles')
+    .from('profiles')
     .select('failed_attempts, is_locked, full_name, role')
     .eq('id', data.user.id) 
     .maybeSingle();
 
   if (profileData?.failed_attempts > 0 || profileData?.is_locked) {
     await supabase
-      .from('user_profiles')
+      .from('profiles')
       .update({ failed_attempts: 0, is_locked: false })
       .eq('id', data.user.id);
   }
