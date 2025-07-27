@@ -3,7 +3,7 @@ import { supabase } from '@/utils/supabaseClient'
 import { Button } from "@/components/ui/button"
 import { useNavigate } from 'react-router-dom'
 import { ThemeProvider } from "@/components/theme-provider"
-import { ThemeToggle } from "@/components/switch-toggle"
+import {ThemeToggle} from "@/components/switch-toggle"
 import {
   Card,
   CardAction,
@@ -17,146 +17,105 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export default function LogIn() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error , setError] = useState('');
   const navigate = useNavigate()
-
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: 'https://task-sheet-beta.vercel.app/',
-      },
-    })
-    if (error) console.error('Google login error:', error.message)
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: 'https://task-sheet-beta.vercel.app/'
+    }
+  })
+  if (error) console.error('Google login error:', error.message)
+}
+
+const handleLogIn = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
+
+  const { data, error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (authError) {
+    setError("Invalid email or password.");
+    return;
   }
 
-  const handleLogIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('failed_attempts, is_locked, full_name, role')
+    .eq('id', data.user.id) 
+    .maybeSingle();
 
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (authError) {
-      setError('Invalid email or password.')
-      return
-    }
-
-    const userId = data.user.id
-
-    // 1. Check profile info (failed_attempts, is_locked)
-    const { data: profileData, error: profileError } = await supabase
+  if (profileData?.failed_attempts > 0 || profileData?.is_locked) {
+    await supabase
       .from('profiles')
-      .select('failed_attempts, is_locked, full_name')
-      .eq('id', userId)
-      .maybeSingle()
-
-    if (profileError) {
-      console.error('Error fetching profile:', profileError)
-    }
-
-    if (profileData?.failed_attempts > 0 || profileData?.is_locked) {
-      await supabase
-        .from('profiles')
-        .update({ failed_attempts: 0, is_locked: false })
-        .eq('id', userId)
-    }
-
-    // 2. Fetch role (optional)
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('roles(name)')
-      .eq('user_id', userId)
-      .maybeSingle()
-
-    if (roleError) {
-      console.error('Error fetching role:', roleError)
-    }
-
-    const userRole = roleData?.roles?.name ?? 'user'
-    localStorage.setItem('userRole', userRole)
-
-    // 3. Navigate to dashboard
-    navigate('/dashboard')
+      .update({ failed_attempts: 0, is_locked: false })
+      .eq('id', data.user.id);
   }
+
+  navigate('/dashboard');
+};
 
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <div className="w-screen h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4 w-full max-w-sm px-4">
-          <ThemeToggle />
-          <Card className="w-full max-w-sm">
-            <CardHeader>
-              <CardTitle>Login to your account</CardTitle>
-              <CardDescription>
-                Enter your email below to login to your account
-              </CardDescription>
-              <CardAction>
-                <Button
-                  className="bg-black text-white dark:bg-white dark:text-black"
-                  variant="link"
-                  onClick={() => navigate('/signup')}
+   <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <div className="w-screen h-screen flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4 w-full max-w-sm px-4">
+    <ThemeToggle/>
+    <Card className="w-full max-w-sm">
+      <CardHeader>
+        <CardTitle>Login to your account</CardTitle>
+        <CardDescription>
+          Enter your email below to login to your account
+        </CardDescription>
+        <CardAction>
+          <Button className="bg-black text-white dark:bg-white dark:text-black"variant="link" onClick={()=>navigate('/signup')}>Sign Up</Button>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleLogIn}>
+          <div className="flex flex-col gap-6">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center">
+                <Label htmlFor="password">Password</Label>
+                <a
+                  href="#"
+                  className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                 >
-                  Sign Up
-                </Button>
-              </CardAction>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogIn}>
-                <div className="flex flex-col gap-6">
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="m@example.com"
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <div className="flex items-center">
-                      <Label htmlFor="password">Password</Label>
-                      <a
-                        href="#"
-                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                      >
-                        Forgot your password?
-                      </a>
-                    </div>
-                    <Input
-                      id="password"
-                      type="password"
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  {error && <p className="text-sm text-red-500">{error}</p>}
-                  <Button
-                    type="submit"
-                    className="w-full bg-black text-white dark:bg-white dark:text-black"
-                  >
-                    Login
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-            <CardFooter className="flex-col gap-2">
-              <Button
-                variant="outline"
-                onClick={handleGoogleLogin}
-                className="w-full bg-black text-white dark:bg-white dark:text-black"
-              >
-                Login with Google
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
+                  Forgot your password?
+                </a>
+              </div>
+              <Input id="password" type="password" onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+             <Button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black">
+               Login
+             </Button>
+          </div>
+        </form>
+      </CardContent>
+      <CardFooter className="flex-col gap-2">
+        <Button variant="outline" onClick={handleGoogleLogin} className="w-full bg-black text-white dark:bg-white dark:text-black">
+          Login with Google
+        </Button>
+      </CardFooter>
+    </Card>
+    </div>
+    </div>
     </ThemeProvider>
   )
 }
