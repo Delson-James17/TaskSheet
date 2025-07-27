@@ -43,8 +43,7 @@ export default function Profile() {
         setError('Failed to load profile')
       }
 
-      // 🔻 Temporarily disable user_roles fetch to avoid recursion error
-      setRole('user') // fallback if role is not fetched
+      setRole('user') 
     }
 
     fetchProfileAndRole()
@@ -106,7 +105,6 @@ export default function Profile() {
             </div>
           ))}
 
-          {/* Role field - read only */}
           <div>
             <label className="block">Role</label>
             <p className="border p-2 rounded capitalize">{role}</p>

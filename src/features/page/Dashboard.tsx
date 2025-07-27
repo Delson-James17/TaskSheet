@@ -25,25 +25,24 @@ export default function Dashboard() {
   const navigate = useNavigate()
 
   const fetchTodayTasks = async () => {
-  const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0]
 
-  const { data, error } = await supabase
-    .from('tasks')
-    .select('id, start_time, end_time, total_hours, status, projects(title)')
-    .gte('start_time', `${today}T00:00:00`)
-    .order('start_time', { ascending: false })
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('id, start_time, end_time, total_hours, status, projects(title)')
+      .gte('start_time', `${today}T00:00:00`)
+      .order('start_time', { ascending: false })
 
-  if (error) {
-    console.error(error)
-  } else {
-    const transformed = data.map((task) => ({
-      ...task,
-      project: task.projects?.[0] || { title: 'Unknown' },
-    }))
-    setTasks(transformed as Task[])
+    if (error) {
+      console.error(error)
+    } else {
+      const transformed = data.map((task) => ({
+        ...task,
+        project: task.projects?.[0] || { title: 'Unknown' },
+      }))
+      setTasks(transformed as Task[])
+    }
   }
-}
-
 
   useEffect(() => {
     const fetchUserAndTasks = async () => {
@@ -59,26 +58,10 @@ export default function Dashboard() {
         avatar: authUser.user_metadata?.avatar_url ?? '',
       })
 
-    type RoleJoinResult = {
-      roles: {
-        name: string;
-      };
-    };
+      // TEMPORARY: fallback role to avoid crash
+      setRole('user')
 
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('roles(name)')
-      .eq('user_id', userId)
-      .maybeSingle() as { data: RoleJoinResult | null, error: any };
-      
-      const userRole = roleData?.roles?.name ?? 'user';
-      setRole(userRole)
-      if (roleError) {
-        console.error('Error fetching role:', roleError)
-      }
-      if (userRole !== 'admin') {
-        await fetchTodayTasks()
-      }
+      await fetchTodayTasks()
 
       if (localStorage.getItem('isNewUser') === 'true') {
         setIsNewUser(true)
@@ -93,7 +76,7 @@ export default function Dashboard() {
     <div className="flex min-h-screen bg-background">
       <SidebarProvider>
         <AppSidebar user={user} role={role} />
-        
+
         <div className="flex-1 ml-64 px-6 py-10">
           {isNewUser && (
             <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 ml-64 mt-4 mr-6">
