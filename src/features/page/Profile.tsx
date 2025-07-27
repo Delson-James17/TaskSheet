@@ -12,7 +12,7 @@ export default function Profile() {
     address: '',
     phone_number: ''
   })
-  const [role, setRole] = useState('user')
+  const [role, setRole] = useState('user') // default role fallback
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
@@ -43,25 +43,9 @@ export default function Profile() {
         setError('Failed to load profile')
       }
 
-    type RoleJoinResult = {
-        roles: {
-        name: string;
-      };
-    };
-
-    const { data: roleData,error: roleError,} = await supabase
-      .from('user_roles')
-      .select('roles(name)')
-      .eq('user_id', user.id)
-      .maybeSingle() as { data: RoleJoinResult | null, error: any }; 
-
-    const userRole = roleData?.roles?.name ?? 'user';
-    setRole(userRole);
-
-    if (roleError) {
-      console.error('Error fetching role:', roleError);
+      // 🔻 Temporarily disable user_roles fetch to avoid recursion error
+      setRole('user') // fallback if role is not fetched
     }
-}
 
     fetchProfileAndRole()
   }, [navigate])
