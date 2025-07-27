@@ -5,11 +5,6 @@ import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { ProjectSelector } from '@/components/ProjectSelector'
 import { TaskTable } from '@/components/TaskTable'
-import { jwtDecode } from 'jwt-decode'
-
-type DecodedToken = {
-  user_role?: string
-}
 
 type Task = {
   id: string
@@ -52,69 +47,47 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchUserAndTasks = async () => {
-      const { data: sessionData } = await supabase.auth.getSession()
-      const session = sessionData?.session
+      const { data: session } = await supabase.auth.getSession()
+      if (!session.session) return navigate('/login')
 
-      if (!session) return navigate('/login')
+      const authUser = session.session.user
 
-      const authUser = session.user
-
-      // Set user display info
       setUser({
         name: authUser.user_metadata?.full_name ?? 'Unknown',
         email: authUser.email ?? '',
         avatar: authUser.user_metadata?.avatar_url ?? '',
       })
+    console.log('👉 Supabase Auth ID:', authUser.id)
 
-      console.log('👉 Supabase Auth ID:', authUser.id)
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', authUser.id)
+        .maybeSingle()
+    console.log('👉 UserProfile:', userProfile)
 
-      // ✅ Decode JWT to extract user_role
-      const decoded = jwtDecode<DecodedToken>(session.access_token)
-      const jwtRole = decoded.user_role
-      console.log('🎭 Role from JWT:', jwtRole)
-
-      if (jwtRole) {
-        setRole(jwtRole)
-
-        const { data: rolePerms, error: permError } = await supabase
-          .rpc('get_permissions_by_role', { role_input: jwtRole })
-
-        if (permError) {
-          console.error('❌ Fetch Permissions Error:', permError)
-        } else {
-          const perms = rolePerms?.map((r: any) => r.name) ?? []
-          console.log('✅ Permissions:', perms)
-          setPermissions(perms)
-        }
+      if (profileError || !userProfile?.role) {
+        console.warn('No role found; defaulting to "user".', profileError)
+        setRole('user')
       } else {
-        // 🔄 Fallback: fetch from profile table
-        const { data: userProfile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', authUser.id)
-          .maybeSingle()
+        const roleName = userProfile.role
+        setRole(roleName)
+      console.log('👉 Role:', roleName)
 
-        console.log('🧾 Fallback UserProfile:', userProfile)
+const { data: rolePerms, error: permError } = await supabase
+  .from('role_permissions')
+  .select('permission, permissions(name)')
+  .eq('role', 'admin')
 
-        if (profileError || !userProfile?.role) {
-          setRole('user')
-          console.warn('⚠️ No role found, defaulting to "user"')
-        } else {
-          const fallbackRole = userProfile.role
-          setRole(fallbackRole)
+if (permError) console.error('❌ Fetch Permissions Error:', permError)
+console.log('✅ Role Permissions:', rolePerms)
 
-          const { data: fallbackPerms, error: fallbackPermsError } =
-            await supabase.rpc('get_permissions_by_role', {
-              role_input: fallbackRole,
-            })
+const perms = rolePerms?.map((r: any) => r.permissions?.name) ?? []
+console.log('✅ Permissions Array:', perms)
 
-          if (fallbackPermsError) {
-            console.error('❌ Permissions fallback error:', fallbackPermsError)
-          } else {
-            const perms = fallbackPerms?.map((r: any) => r.name) ?? []
-            setPermissions(perms)
-          }
-        }
+      setPermissions(perms)
+
+
       }
 
       await fetchTodayTasks()
@@ -124,7 +97,7 @@ export default function Dashboard() {
         localStorage.removeItem('isNewUser')
       }
     }
-
+    
     fetchUserAndTasks()
   }, [navigate])
 
