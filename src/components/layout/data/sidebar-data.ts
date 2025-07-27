@@ -2,7 +2,6 @@ import {
   IconLayoutDashboard,
   IconUsers,
   IconSettings,
-  IconLock,
   IconUserPlus,
   IconBriefcase,
   IconCalendarEvent,
@@ -22,7 +21,8 @@ type UserWithAvatar = {
 
 export const getSidebarData = (
   user: UserWithAvatar,
-  role: string
+  role: string,
+  permissions: string[]
 ): SidebarData => {
   const isAdmin = role === 'admin'
   const isOnboarding = !user.name || user.name.toLowerCase() === 'unknown'
@@ -35,24 +35,6 @@ export const getSidebarData = (
     },
   ]
 
-  const adminNav = [
-    { title: 'Manage Users', url: '/admin/users', icon: IconUsers },
-    { title: 'Projects', url: '/admin/projects', icon: IconBriefcase },
-    { title: 'Tasks', url: '/admin/tasks', icon: IconCalendarEvent },
-    { title: 'Timesheets', url: '/admin/timesheets', icon: IconClock },
-    { title: 'Timesheet Bank', url: '/admin/timesheet-bank', icon: IconDatabase },
-    { title: 'User Roles', url: '/admin/user-roles', icon: IconUserCheck },
-    { title: 'Roles', url: '/admin/roles', icon: IconIdBadge },
-    { title: 'Settings', url: '/admin/settings', icon: IconSettings },
-  ]
-
-  const userNav = [
-    { title: 'Profile', url: '/profile', icon: IconLock },
-    { title: 'Projects', url: '/projects', icon: IconBriefcase },
-    { title: 'Tasks', url: '/tasks', icon: IconCalendarEvent },
-    { title: 'Timesheets', url: '/timesheets', icon: IconClock },
-  ]
-
   const onboardingNav = isOnboarding
     ? [
         {
@@ -62,6 +44,25 @@ export const getSidebarData = (
         },
       ]
     : []
+
+  const adminNav = [
+    { title: 'Manage Users', url: '/admin/users', icon: IconUsers, perm: 'view.manage_users' },
+    { title: 'Projects', url: '/admin/projects', icon: IconBriefcase, perm: 'view.projects' },
+    { title: 'Tasks', url: '/admin/tasks', icon: IconCalendarEvent, perm: 'view.tasks' },
+    { title: 'Timesheets', url: '/admin/timesheets', icon: IconClock, perm: 'view.timesheets' },
+    { title: 'Timesheet Bank', url: '/admin/timesheet-bank', icon: IconDatabase, perm: 'view.timesheet_bank' },
+    { title: 'User Roles', url: '/admin/user-roles', icon: IconUserCheck, perm: 'view.user_roles' },
+    { title: 'Roles', url: '/admin/roles', icon: IconIdBadge, perm: 'view.roles' },
+    { title: 'Settings', url: '/admin/settings', icon: IconSettings, perm: 'view.settings' },
+  ]
+
+  const filteredAdminNav = adminNav.filter(item => permissions.includes(item.perm))
+
+  const userNav = [
+    { title: 'Projects', url: '/projects', icon: IconBriefcase },
+    { title: 'Tasks', url: '/tasks', icon: IconCalendarEvent },
+    { title: 'Timesheets', url: '/timesheets', icon: IconClock },
+  ]
 
   return {
     user,
@@ -79,7 +80,7 @@ export const getSidebarData = (
         : []),
       {
         title: isAdmin ? 'Admin' : 'User',
-        items: isAdmin ? adminNav : userNav,
+        items: isAdmin ? filteredAdminNav : userNav, 
       },
     ],
   }

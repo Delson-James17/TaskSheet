@@ -13,10 +13,11 @@ import { getSidebarData } from './layout/data/sidebar-data'
 type Props = React.ComponentProps<typeof Sidebar> & {
   user: { name: string; email: string; avatar: string }
   role: string
+  permissions: string[] 
 }
 
-export function AppSidebar({ user, role, ...props }: Props) {
-  const sidebarData = getSidebarData(user, role)
+export function AppSidebar({ user, role,permissions, ...props }: Props) {
+  const sidebarData = getSidebarData(user, role, permissions)
 
   return (
     <Sidebar collapsible='icon' variant='floating' {...props}>

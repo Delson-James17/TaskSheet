@@ -20,7 +20,8 @@ type Task = {
 export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [user, setUser] = useState({ name: '', email: '', avatar: '' })
-  const [role, setRole] = useState('user')
+  const [role, setRole] = useState<string>('user')
+  const [permissions, setPermissions] = useState<string[]>([])
   const [isNewUser, setIsNewUser] = useState(false)
   const navigate = useNavigate()
 
@@ -56,8 +57,36 @@ export default function Dashboard() {
         email: authUser.email ?? '',
         avatar: authUser.user_metadata?.avatar_url ?? '',
       })
+    console.log('👉 Supabase Auth ID:', authUser.id)
 
-      setRole('user')
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', authUser.id)
+        .maybeSingle()
+    console.log('👉 UserProfile:', userProfile)
+
+      if (profileError || !userProfile?.role) {
+        console.warn('No role found; defaulting to "user".', profileError)
+        setRole('user')
+      } else {
+        const roleName = userProfile.role
+        setRole(roleName)
+      console.log('👉 Role:', roleName)
+
+const { data: rolePerms, error: permError } = await supabase
+  .rpc('get_permissions_by_role', { role_input: userProfile.role })
+
+if (permError) {
+  console.error('❌ Fetch Permissions Error:', permError)
+} else {
+  console.log('✅ Role Permissions:', rolePerms)
+  const perms = rolePerms?.map((r: any) => r.name) ?? []
+  console.log('✅ Permissions Array:', perms)
+  setPermissions(perms)
+}
+
+      }
 
       await fetchTodayTasks()
 
@@ -66,14 +95,22 @@ export default function Dashboard() {
         localStorage.removeItem('isNewUser')
       }
     }
-
+    
     fetchUserAndTasks()
   }, [navigate])
+
+  if (!permissions.includes('dashboard.view')) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-xl">
+        ❌ You do not have permission to view the Dashboard.
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
       <SidebarProvider>
-        <AppSidebar user={user} role={role} />
+        <AppSidebar user={user} role={role} permissions={permissions} />
 
         <div className="flex-1 ml-64 px-6 py-10">
           {isNewUser && (
