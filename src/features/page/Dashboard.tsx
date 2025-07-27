@@ -50,7 +50,7 @@ export default function Dashboard() {
       if (!session.session) return navigate('/login')
 
       const authUser = session.session.user
-      const userId = authUser.id
+      // const userId = authUser.id
 
       setUser({
         name: authUser.user_metadata?.full_name ?? 'Unknown',
