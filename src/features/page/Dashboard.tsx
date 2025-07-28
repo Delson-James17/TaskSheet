@@ -5,6 +5,8 @@ import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { ProjectSelector } from '@/components/ProjectSelector'
 import { TaskTable } from '@/components/TaskTable'
+import { ThemeProvider } from '@/components/theme-provider'
+import { ThemeToggle } from '@/components/switch-toggle'
 
 type Task = {
   id: string
@@ -21,7 +23,6 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [user, setUser] = useState({ name: '', email: '', avatar: '' })
   const [role, setRole] = useState<string>('user')
-  const [permissions, setPermissions] = useState<string[]>([])
   const [isNewUser, setIsNewUser] = useState(false)
   const navigate = useNavigate()
 
@@ -30,16 +31,16 @@ export default function Dashboard() {
 
     const { data, error } = await supabase
       .from('tasks')
-      .select('id, start_time, end_time, total_hours, status, projects(title)')
+      .select('id, start_time, end_time, total_hours, status, project:project_id(title)')
       .gte('start_time', `${today}T00:00:00`)
       .order('start_time', { ascending: false })
 
     if (error) {
       console.error(error)
     } else {
-      const transformed = data.map((task) => ({
+      const transformed = data.map((task: any) => ({
         ...task,
-        project: task.projects?.[0] || { title: 'Unknown' },
+        project: Array.isArray(task.project) ? task.project[0] : task.project ?? { title: 'Unknown' },
       }))
       setTasks(transformed as Task[])
     }
@@ -57,37 +58,18 @@ export default function Dashboard() {
         email: authUser.email ?? '',
         avatar: authUser.user_metadata?.avatar_url ?? '',
       })
-    console.log('👉 Supabase Auth ID:', authUser.id)
 
       const { data: userProfile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', authUser.id)
         .maybeSingle()
-    console.log('👉 UserProfile:', userProfile)
 
       if (profileError || !userProfile?.role) {
         console.warn('No role found; defaulting to "user".', profileError)
         setRole('user')
       } else {
-        const roleName = userProfile.role
-        setRole(roleName)
-      console.log('👉 Role:', roleName)
-
-const { data: rolePerms, error: permError } = await supabase
-  .from('role_permissions')
-  .select('permission, permissions(name)')
-  .eq('role', 'admin')
-
-if (permError) console.error('❌ Fetch Permissions Error:', permError)
-console.log('✅ Role Permissions:', rolePerms)
-
-const perms = rolePerms?.map((r: any) => r.permissions?.name) ?? []
-console.log('✅ Permissions Array:', perms)
-
-      setPermissions(perms)
-
-
+        setRole(userProfile.role)
       }
 
       await fetchTodayTasks()
@@ -97,41 +79,38 @@ console.log('✅ Permissions Array:', perms)
         localStorage.removeItem('isNewUser')
       }
     }
-    
+
     fetchUserAndTasks()
   }, [navigate])
 
-  if (!permissions.includes('dashboard.view')) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-xl">
-        ❌ You do not have permission to view the Dashboard.
-      </div>
-    )
-  }
-
   return (
-    <div className="flex min-h-screen bg-background">
-      <SidebarProvider>
-        <AppSidebar user={user} role={role} permissions={permissions} />
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <div className="flex min-h-screen bg-background text-foreground">
+        <SidebarProvider>
+          <AppSidebar user={user} role={role} permissions={[]} />
 
-        <div className="flex-1 ml-64 px-6 py-10">
-          {isNewUser && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 ml-64 mt-4 mr-6">
-              🎉 Welcome to TaskSheet! Here are 3 things to get started:
-              <ul className="list-disc ml-6 mt-2 text-sm">
-                <li>⏳ Start tracking your first task</li>
-                <li>📁 Switch projects using the dropdown</li>
-                <li>🧑‍💼 Update your profile anytime</li>
-              </ul>
+          <main className="flex-1 px-6 py-10">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-3xl font-bold">My Task Sheet</h1>
+              <ThemeToggle />
             </div>
-          )}
 
-          <h1 className="text-3xl font-bold mb-6">My Task Sheet</h1>
+            {isNewUser && (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                🎉 Welcome to TaskSheet! Here are 3 things to get started:
+                <ul className="list-disc ml-6 mt-2 text-sm">
+                  <li>⏳ Start tracking your first task</li>
+                  <li>📁 Switch projects using the dropdown</li>
+                  <li>🧑‍💼 Update your profile anytime</li>
+                </ul>
+              </div>
+            )}
 
-          <ProjectSelector fetchTasks={fetchTodayTasks} />
-          <TaskTable tasks={tasks} fetchTasks={fetchTodayTasks} />
-        </div>
-      </SidebarProvider>
-    </div>
+            <ProjectSelector fetchTasks={fetchTodayTasks} />
+            <TaskTable tasks={tasks} fetchTasks={fetchTodayTasks} />
+          </main>
+        </SidebarProvider>
+      </div>
+    </ThemeProvider>
   )
 }
