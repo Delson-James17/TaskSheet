@@ -7,42 +7,22 @@ import { ProjectSelector } from '@/components/ProjectSelector'
 import { TaskTable } from '@/components/TaskTable'
 import { ThemeProvider } from '@/components/theme-provider'
 import { ThemeToggle } from '@/components/switch-toggle'
-
-type Task = {
-  id: string
-  start_time: string
-  end_time: string
-  total_hours: number
-  status: string
-  project: {
-    title: string
-  }
-}
+import { fetchTodayTasks } from '@/controller/TaskActions'
+import { TaskWithExtras } from '@/components/layout/types'
 
 export default function Dashboard() {
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [user, setUser] = useState({ name: '', email: '', avatar: '' })
+  const [tasks, setTasks] = useState<TaskWithExtras[]>([])
+  const [user, setUser] = useState({ id: '', name: '', email: '', avatar: '' }) // ✅ include id
   const [role, setRole] = useState<string>('user')
   const [isNewUser, setIsNewUser] = useState(false)
   const navigate = useNavigate()
 
-  const fetchTodayTasks = async () => {
-    const today = new Date().toISOString().split('T')[0]
-
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('id, start_time, end_time, total_hours, status, project:project_id(title)')
-      .gte('start_time', `${today}T00:00:00`)
-      .order('start_time', { ascending: false })
-
-    if (error) {
-      console.error(error)
-    } else {
-      const transformed = data.map((task: any) => ({
-        ...task,
-        project: Array.isArray(task.project) ? task.project[0] : task.project ?? { title: 'Unknown' },
-      }))
-      setTasks(transformed as Task[])
+  const loadTasks = async (userId: string) => {
+    try {
+      const todayTasks = await fetchTodayTasks(userId)
+      setTasks(todayTasks)
+    } catch (error) {
+      console.error("Failed to load today's tasks:", error)
     }
   }
 
@@ -53,7 +33,9 @@ export default function Dashboard() {
 
       const authUser = session.session.user
 
+      // ✅ Save user ID so we can pass it to fetchTodayTasks
       setUser({
+        id: authUser.id,
         name: authUser.user_metadata?.full_name ?? 'Unknown',
         email: authUser.email ?? '',
         avatar: authUser.user_metadata?.avatar_url ?? '',
@@ -72,7 +54,7 @@ export default function Dashboard() {
         setRole(userProfile.role)
       }
 
-      await fetchTodayTasks()
+      await loadTasks(authUser.id)
 
       if (localStorage.getItem('isNewUser') === 'true') {
         setIsNewUser(true)
@@ -106,8 +88,8 @@ export default function Dashboard() {
               </div>
             )}
 
-            <ProjectSelector fetchTasks={fetchTodayTasks} />
-            <TaskTable tasks={tasks} fetchTasks={fetchTodayTasks} />
+            <ProjectSelector fetchTasks={() => loadTasks(user.id)} />
+            <TaskTable tasks={tasks} fetchTasks={() => loadTasks(user.id)} />
           </main>
         </SidebarProvider>
       </div>

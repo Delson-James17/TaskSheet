@@ -1,25 +1,17 @@
 import { useEffect, useState } from 'react'
 import { TaskControls } from './TaskControls'
-import { LiveTimer, formatDuration } from '@/components/LiveTimer'
-
+import { formatDuration } from '@/components/LiveTimer'
+import { TaskWithExtras } from '@/components/layout/types'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
+import duration from 'dayjs/plugin/duration'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
+dayjs.extend(duration)
 
-type Task = {
-  id: string
-  start_time: string
-  end_time: string | null
-  total_hours: number
-  status: string
-  project: {
-    title: string
-  } | null
-  accumulated_seconds?: number
-}
+type Task = TaskWithExtras
 
 interface Props {
   tasks: Task[]
@@ -27,17 +19,33 @@ interface Props {
 }
 
 export function TaskTable({ tasks, fetchTasks }: Props) {
-  const [now, setNow] = useState(dayjs())
+  const [now, setNow] = useState(dayjs.utc())
 
-  useEffect(() => {
-    const interval = setInterval(() => setNow(dayjs()), 1000)
-    return () => clearInterval(interval)
-  }, [])
+useEffect(() => {
+  const interval = setInterval(() => setNow(dayjs()), 1000); // local time
+  return () => clearInterval(interval);
+}, []);
 
-  const formatToLocalTime = (timestamp: string | null) => {
-    if (!timestamp) return '—'
-    return dayjs.utc(timestamp).tz('Asia/Manila').format('M/D/YYYY, h:mm:ss A')
+const formatToLocalTime = (timestamp: string | null) => {
+  if (!timestamp) return '—'
+  return dayjs(timestamp).tz('Asia/Manila').format('M/D/YYYY, h:mm:ss A')
+}
+
+const calculateTotalSeconds = (task: Task) => {
+  const baseSeconds =
+    task.accumulated_seconds ??
+    (task.total_hours ? task.total_hours * 3600 : 0);
+
+  if (task.status === 'running' && task.resume_time) {
+    const resume = dayjs(task.resume_time); // no utc()
+    const liveSeconds = dayjs().diff(resume, 'second'); // local vs local
+    return baseSeconds + liveSeconds;
   }
+
+  return baseSeconds;
+};
+
+
 
   return (
     <div className="bg-black text-white dark:bg-white dark:text-black rounded-lg shadow overflow-x-auto">
@@ -49,6 +57,7 @@ export function TaskTable({ tasks, fetchTasks }: Props) {
           <tr>
             <th className="text-left py-3 px-4">Project</th>
             <th className="text-left py-3 px-4">Start</th>
+            <th className="text-left py-3 px-4">Pause Time</th>
             <th className="text-left py-3 px-4">End</th>
             <th className="text-left py-3 px-4">Live</th>
             <th className="text-left py-3 px-4">Total Time</th>
@@ -58,7 +67,7 @@ export function TaskTable({ tasks, fetchTasks }: Props) {
         <tbody>
           {tasks.length === 0 ? (
             <tr>
-              <td colSpan={6} className="text-center py-4 text-gray-400 dark:text-gray-600">
+              <td colSpan={7} className="text-center py-4 text-gray-400 dark:text-gray-600">
                 No tasks today
               </td>
             </tr>
@@ -69,39 +78,43 @@ export function TaskTable({ tasks, fetchTasks }: Props) {
                 <td className="py-2 px-4 text-green-500">
                   {formatToLocalTime(task.start_time)}
                 </td>
+                <td className="py-2 px-4 text-yellow-400">
+                  {formatToLocalTime(task.last_pause_time ?? null)}
+                </td>
                 <td className="py-2 px-4 text-red-500">
                   {formatToLocalTime(task.end_time)}
                 </td>
-                <td className="py-2 px-4 text-blue-400">
-                  {task.status === 'running' ? (
-                    <LiveTimer
-                      startTime={task.start_time}
-                      accumulated={task.accumulated_seconds ?? 0}
-                    />
-                  ) : (
-                    '—'
+                <td className="py-2 px-4">
+                  {task.status === 'paused' && (
+                    <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full inline-flex items-center">
+                      🟡 Paused
+                    </span>
+                  )}
+                  {task.status === 'running' && (
+                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full inline-flex items-center">
+                      🟢 Running
+                    </span>
+                  )}
+                  {task.status === 'ended' && (
+                    <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full inline-flex items-center">
+                      🔴 Ended
+                    </span>
                   )}
                 </td>
                 <td className="py-2 px-4 font-semibold text-blue-300">
-                  {formatDuration(
-                    task.accumulated_seconds ??
-                      (task.end_time
-                        ? Math.floor(
-                            (new Date(task.end_time).getTime() - new Date(task.start_time).getTime()) /
-                              1000
-                          )
-                        : 0)
-                  )}
+                  {formatDuration(calculateTotalSeconds(task))}
                 </td>
-                <td className="py-2 px-4 text-center">
-                  <TaskControls
-                    taskId={task.id}
-                    status={task.status}
-                    startTime={task.start_time}
-                    totalHours={task.total_hours}
-                    fetchTasks={fetchTasks}
-                  />
-                </td>
+                  <td className="py-2 px-4 text-center">
+                    {task.status !== 'ended' ? (
+                      <TaskControls
+                        taskId={task.id}
+                        status={task.status as 'running' | 'paused'| 'ended'}
+                        fetchTasks={fetchTasks}
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-xs">—</span>
+                    )}
+                  </td>
               </tr>
             ))
           )}
